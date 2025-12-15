@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Login Page Colors -->
+    <color name="purple_primary">#8B5CF6</color>
+    <color name="purple_dark">#7C3AED</color>
+    <color name="red_gradient">#EF4444</color>
+    <color name="background_light">#F9FAFB</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="text_primary">#111827</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="input_border">#3B82F6</color>
+    <color name="input_background">#FFFFFF</color>
+</resources>

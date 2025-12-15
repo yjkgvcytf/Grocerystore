@@ -1,0 +1,116 @@
+<resources>
+    <string name="app_name">Продуктовый магазин</string>
+    
+    <!-- Login Page -->
+    <string name="login_account">Вход в аккаунт</string>
+    <string name="email_address">Адрес электронной почты</string>
+    <string name="password">Пароль</string>
+    <string name="remember_me">Запомнить меня</string>
+    <string name="login">Войти</string>
+    <string name="no_account">Нет аккаунта? Зарегистрируйтесь сейчас</string>
+    <string name="terms_privacy">Вход означает, что вы соглашаетесь с нашими Условиями обслуживания и Политикой конфиденциальности</string>
+    
+    <!-- Navigation -->
+    <string name="mall">Торговый центр</string>
+    <string name="search">Поиск</string>
+    
+    <!-- Language -->
+    <string name="chinese">中文</string>
+    <string name="english">English</string>
+    <string name="russian">Русский</string>
+    
+    <!-- Validation Messages -->
+    <string name="required">Обязательно</string>
+    <string name="invalid_email">Пожалуйста, введите действительный адрес электронной почты</string>
+    <string name="password_too_short">Пароль должен содержать не менее 6 символов</string>
+    <string name="login_success">Вход выполнен успешно</string>
+    
+    <!-- Register Page -->
+    <string name="register_account">Регистрация аккаунта</string>
+    <string name="full_name">Полное имя</string>
+    <string name="confirm_password">Подтвердите пароль</string>
+    <string name="phone_number">Номер телефона</string>
+    <string name="register">Зарегистрироваться</string>
+    <string name="already_have_account">Уже есть аккаунт? Войдите сейчас</string>
+    <string name="register_success">Регистрация прошла успешно</string>
+    <string name="passwords_not_match">Пароли не совпадают</string>
+    <string name="invalid_phone">Пожалуйста, введите действительный номер телефона</string>
+    <string name="name_too_short">Имя должно содержать не менее 2 символов</string>
+    
+    <!-- Home Page -->
+    <string name="home">Главная</string>
+    <string name="categories">Категории</string>
+    <string name="shopping_cart">Корзина</string>
+    <string name="orders">Заказы</string>
+    <string name="profile">Профиль</string>
+    <string name="popular_products">Популярные товары</string>
+    <string name="add_to_cart">Добавить в корзину</string>
+    <string name="details">Подробнее</string>
+    <string name="product_details">Детали товара</string>
+    <string name="price">Цена</string>
+    <string name="sold">Продано</string>
+    <string name="stock">На складе</string>
+    <string name="description">Описание</string>
+    <string name="added_to_cart">Добавлено в корзину</string>
+    <string name="cart">Корзина</string>
+    <string name="total">Итого</string>
+    <string name="checkout">Оформить заказ</string>
+    <string name="empty_cart">Ваша корзина пуста</string>
+    <string name="remove">Удалить</string>
+    <string name="quantity">Количество</string>
+    
+    <!-- Categories Page -->
+    <string name="all_categories">Все категории</string>
+    <string name="products_in_category">Товары в категории</string>
+    <string name="no_products">Товары недоступны</string>
+    
+    <!-- Cart Page -->
+    <string name="continue_shopping">Продолжить покупки</string>
+    <string name="original_price">Исходная цена</string>
+    <string name="discount">Скидка</string>
+    <string name="reduction">Снижение</string>
+    <string name="final_total">Итоговая сумма</string>
+    <string name="you_save">Вы экономите</string>
+    
+    <!-- Order Page -->
+    <string name="order_details">Детали заказа</string>
+    <string name="order_number">Номер заказа</string>
+    <string name="order_date">Дата заказа</string>
+    <string name="order_status">Статус заказа</string>
+    <string name="shipping_address">Адрес доставки</string>
+    <string name="recipient_name">Имя получателя</string>
+    <string name="recipient_phone">Контактный телефон</string>
+    <string name="order_items">Товары заказа</string>
+    <string name="order_summary">Сводка заказа</string>
+    <string name="submit_order">Подтвердить заказ</string>
+    <string name="order_success">Заказ успешно оформлен</string>
+    <string name="pending">В ожидании</string>
+    <string name="processing">В обработке</string>
+    <string name="shipped">Отправлено</string>
+    <string name="delivered">Доставлено</string>
+    <string name="cancelled">Отменено</string>
+    
+    <!-- Profile Page -->
+    <string name="my_profile">Мой профиль</string>
+    <string name="personal_info">Личная информация</string>
+    <string name="my_orders">Мои заказы</string>
+    <string name="edit_profile">Редактировать профиль</string>
+    <string name="logout">Выйти</string>
+    <string name="logout_confirm">Вы уверены, что хотите выйти?</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="no_orders">Заказов пока нет</string>
+    <string name="view_order">Просмотреть заказ</string>
+    <string name="order">Заказ</string>
+    <string name="goods">Товары</string>
+    <string name="delivery">Доставка</string>
+    <string name="free">Бесплатно</string>
+    <string name="confirm_order">Подтвердить заказ</string>
+    <string name="confirm_order_message">Вы уверены, что хотите оформить этот заказ?</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="order_success_message">Заказ успешно оформлен!</string>
+    <string name="ok">ОК</string>
+    <string name="unit_price">Цена за единицу</string>
+    <string name="view_all">Посмотреть все</string>
+</resources>
+
