@@ -6,9 +6,10 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.grocerystore.api.OrderItem
 
 class OrderProductAdapter(
-    private val cartItems: List<CartItem>
+    private val orderItems: List<OrderItem>
 ) : RecyclerView.Adapter<OrderProductAdapter.OrderProductViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderProductViewHolder {
@@ -18,10 +19,10 @@ class OrderProductAdapter(
     }
 
     override fun onBindViewHolder(holder: OrderProductViewHolder, position: Int) {
-        holder.bind(cartItems[position])
+        holder.bind(orderItems[position])
     }
 
-    override fun getItemCount(): Int = cartItems.size
+    override fun getItemCount(): Int = orderItems.size
 
     inner class OrderProductViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val productImage: ImageView = itemView.findViewById(R.id.productImage)
@@ -30,29 +31,27 @@ class OrderProductAdapter(
         private val quantityText: TextView = itemView.findViewById(R.id.quantityText)
         private val productPrice: TextView = itemView.findViewById(R.id.productPrice)
 
-        fun bind(cartItem: CartItem) {
+        fun bind(orderItem: OrderItem) {
             val context = itemView.context
-            val product = cartItem.product
             val currentLanguage = LocaleHelper.getLocale(context)
             
             productName.text = when (currentLanguage) {
-                "zh" -> product.name
-                "en" -> product.nameEn
-                "ru" -> product.nameRu
-                else -> product.name
-            }
+                "zh" -> orderItem.productName
+                "en" -> orderItem.productNameEn
+                else -> orderItem.productName
+            } ?: "Product"
             
             // Display unit price
-            unitPrice.text = "${context.getString(R.string.unit_price)}: ¥${product.price}"
+            unitPrice.text = "${context.getString(R.string.unit_price)}: ¥${orderItem.unitPrice}"
             
             // Display quantity
-            quantityText.text = "${context.getString(R.string.quantity)}: ${cartItem.quantity}"
+            quantityText.text = "${context.getString(R.string.quantity)}: ${orderItem.quantity}"
             
             // Display subtotal
-            productPrice.text = "¥${cartItem.getTotalPrice()}"
+            productPrice.text = "¥${orderItem.subtotal}"
             
-            // Set placeholder image
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            // Load product image
+            ImageHelper.loadProductImage(context, productImage, orderItem.imageUrl)
         }
     }
 }

@@ -5,18 +5,22 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
-import androidx.activity.enableEdgeToEdge
+import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import com.example.grocerystore.repository.OrderRepository
+import com.example.grocerystore.api.Order as ApiOrder
+import kotlinx.coroutines.launch
 
 class OrdersActivity : AppCompatActivity() {
     
     private lateinit var backButton: ImageButton
     private lateinit var ordersRecyclerView: RecyclerView
     private lateinit var emptyOrdersLayout: View
+    private lateinit var loadingIndicator: ProgressBar
     private lateinit var navHome: View
     private lateinit var navCategories: View
     private lateinit var navCart: View
@@ -24,6 +28,9 @@ class OrdersActivity : AppCompatActivity() {
     private lateinit var navProfile: View
     
     private lateinit var orderAdapter: OrderAdapter
+    private lateinit var orderRepository: OrderRepository
+    
+    private var orders: List<ApiOrder> = emptyList()
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -31,15 +38,9 @@ class OrdersActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_orders)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        orderRepository = OrderRepository(this)
 
         initViews()
         setupRecyclerView()
@@ -51,6 +52,7 @@ class OrdersActivity : AppCompatActivity() {
         backButton = findViewById(R.id.backButton)
         ordersRecyclerView = findViewById(R.id.ordersRecyclerView)
         emptyOrdersLayout = findViewById(R.id.emptyOrdersLayout)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
         navHome = findViewById(R.id.navHome)
         navCategories = findViewById(R.id.navCategories)
         navCart = findViewById(R.id.navCart)
@@ -59,7 +61,7 @@ class OrdersActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        orderAdapter = OrderAdapter(OrderManager.getOrders()) { order ->
+        orderAdapter = OrderAdapter(orders) { order ->
             // Navigate to order detail page
             val intent = Intent(this, OrderActivity::class.java)
             intent.putExtra("order_id", order.id)
@@ -103,7 +105,21 @@ class OrdersActivity : AppCompatActivity() {
     }
 
     private fun loadOrders() {
-        val orders = OrderManager.getOrders()
+        loadingIndicator.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            orderRepository.getOrders(0, 50).onSuccess { loadedOrders ->
+                loadingIndicator.visibility = View.GONE
+                orders = loadedOrders
+                updateUI()
+            }.onFailure { e ->
+                loadingIndicator.visibility = View.GONE
+                Toast.makeText(this@OrdersActivity, "Failed to load orders: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun updateUI() {
         if (orders.isEmpty()) {
             ordersRecyclerView.visibility = View.GONE
             emptyOrdersLayout.visibility = View.VISIBLE

@@ -47,8 +47,8 @@ class BannerAdapter(
                 else -> product.description
             }
             
-            // Set placeholder image
-            bannerImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            // Load product image
+            ImageHelper.loadProductImage(context, bannerImage, product.imageUrl)
             
             itemView.setOnClickListener {
                 onItemClick(product)

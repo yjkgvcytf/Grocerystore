@@ -24,6 +24,7 @@
     <string name="invalid_email">请输入有效的邮箱地址</string>
     <string name="password_too_short">密码至少需要6个字符</string>
     <string name="login_success">登录成功</string>
+    <string name="login_failed">登录失败，请检查账号密码</string>
     
     <!-- Register Page -->
     <string name="register_account">注册账户</string>
@@ -33,6 +34,7 @@
     <string name="register">注册</string>
     <string name="already_have_account">已有账户?立即登录</string>
     <string name="register_success">注册成功</string>
+    <string name="registration_failed">注册失败，请稍后重试</string>
     <string name="passwords_not_match">两次输入的密码不一致</string>
     <string name="invalid_phone">请输入有效的手机号码</string>
     <string name="name_too_short">姓名至少需要2个字符</string>

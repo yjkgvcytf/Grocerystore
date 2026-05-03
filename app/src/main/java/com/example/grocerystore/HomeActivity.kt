@@ -3,30 +3,31 @@ package com.example.grocerystore
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.EditText
 import android.widget.ImageView
-import android.widget.Spinner
-import android.widget.TextView
+import android.widget.EditText
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import android.widget.ProgressBar
+import android.widget.Spinner
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.example.grocerystore.repository.AuthRepository
+import com.example.grocerystore.repository.CartRepository
+import com.example.grocerystore.repository.ProductRepository
+import kotlinx.coroutines.launch
 
 class HomeActivity : AppCompatActivity() {
     
-    private lateinit var searchEditText: EditText
     private lateinit var languageSpinner: Spinner
     private lateinit var cartIcon: ImageView
     private lateinit var bannerViewPager: ViewPager2
+    private lateinit var searchEditText: EditText
     private lateinit var popularProductsRecyclerView: RecyclerView
     private lateinit var productsRecyclerView: RecyclerView
     private lateinit var navHome: View
@@ -34,6 +35,7 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var navCart: View
     private lateinit var navOrders: View
     private lateinit var navProfile: View
+    private lateinit var loadingIndicator: ProgressBar
     
     private lateinit var productAdapter: ProductAdapter
     private lateinit var popularProductAdapter: ProductHorizontalAdapter
@@ -41,6 +43,11 @@ class HomeActivity : AppCompatActivity() {
     
     private var allProducts: List<Product> = emptyList()
     private var filteredProducts: List<Product> = emptyList()
+    private var hasSpinnerInitialized = false
+
+    private lateinit var productRepository: ProductRepository
+    private lateinit var cartRepository: CartRepository
+    private lateinit var authRepository: AuthRepository
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -48,15 +55,16 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_home)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        // Debug: Check login status on entry
+        productRepository = ProductRepository(this)
+        cartRepository = CartRepository(this)
+        authRepository = AuthRepository(this)
+
+        // Debug log for login state
+        android.util.Log.d("HomeActivity", "isLoggedIn: ${authRepository.isLoggedIn()}")
+        android.util.Log.d("HomeActivity", "hasAuthToken: ${authRepository.hasAuthToken()}")
 
         initViews()
         setupLanguageSpinner()
@@ -65,13 +73,27 @@ class HomeActivity : AppCompatActivity() {
         setupBottomNavigation()
         setupSearch()
         updateCartBadge()
+
+        loadProductsFromApi()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Debug: Check login status on resume
+        android.util.Log.d("HomeActivity", "onResume - isLoggedIn: ${authRepository.isLoggedIn()}")
+
+        updateCartBadge()
+        // Refresh adapters to update language
+        if (allProducts.isNotEmpty()) {
+            updateProductsList()
+        }
     }
 
     private fun initViews() {
-        searchEditText = findViewById(R.id.searchEditText)
         languageSpinner = findViewById(R.id.languageSpinner)
         cartIcon = findViewById(R.id.cartIcon)
         bannerViewPager = findViewById(R.id.bannerViewPager)
+        searchEditText = findViewById(R.id.searchEditText)
         popularProductsRecyclerView = findViewById(R.id.popularProductsRecyclerView)
         productsRecyclerView = findViewById(R.id.productsRecyclerView)
         navHome = findViewById(R.id.navHome)
@@ -79,6 +101,7 @@ class HomeActivity : AppCompatActivity() {
         navCart = findViewById(R.id.navCart)
         navOrders = findViewById(R.id.navOrders)
         navProfile = findViewById(R.id.navProfile)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
     }
 
     private fun setupLanguageSpinner() {
@@ -100,9 +123,14 @@ class HomeActivity : AppCompatActivity() {
             else -> 0
         }
         languageSpinner.setSelection(position)
+        hasSpinnerInitialized = false
 
         languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (!hasSpinnerInitialized) {
+                    hasSpinnerInitialized = true
+                    return
+                }
                 val languageCode = when (position) {
                     0 -> "zh"
                     1 -> "en"
@@ -127,14 +155,6 @@ class HomeActivity : AppCompatActivity() {
             openProductDetails(product)
         }
         bannerViewPager.adapter = bannerAdapter
-        
-        // Auto-scroll banner
-        bannerViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                super.onPageSelected(position)
-                // Auto-scroll logic can be added here
-            }
-        })
     }
 
     private fun setupRecyclerViews() {
@@ -191,45 +211,169 @@ class HomeActivity : AppCompatActivity() {
             val intent = Intent(this, CartActivity::class.java)
             startActivity(intent)
         }
-        
-        searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filterProducts(s.toString())
-            }
-            
-            override fun afterTextChanged(s: Editable?) {}
-        })
-    }
 
-    private fun filterProducts(query: String) {
-        if (query.isEmpty()) {
-            filteredProducts = allProducts
-        } else {
-            val currentLanguage = LocaleHelper.getLocale(this)
-            filteredProducts = allProducts.filter { product ->
-                val name = when (currentLanguage) {
-                    "zh" -> product.name
-                    "en" -> product.nameEn
-                    "ru" -> product.nameRu
-                    else -> product.name
+        searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = searchEditText.text?.toString()?.trim() ?: ""
+                if (query.isNotEmpty()) {
+                    searchProducts(query)
+                } else {
+                    Toast.makeText(this, getString(R.string.search), Toast.LENGTH_SHORT).show()
                 }
-                val description = when (currentLanguage) {
-                    "zh" -> product.description
-                    "en" -> product.descriptionEn
-                    "ru" -> product.descriptionRu
-                    else -> product.description
-                }
-                name.contains(query, ignoreCase = true) || 
-                description.contains(query, ignoreCase = true)
+                true
+            } else {
+                false
             }
         }
+    }
+
+    private fun searchProducts(query: String) {
+        loadingIndicator.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            productRepository.searchProducts(query, 0, 50).onSuccess { products ->
+                loadingIndicator.visibility = View.GONE
+                filteredProducts = products.map { apiProduct ->
+                    Product(
+                        id = apiProduct.id,
+                        name = apiProduct.name,
+                        nameEn = apiProduct.nameEn,
+                        nameRu = apiProduct.nameRu,
+                        description = apiProduct.description,
+                        descriptionEn = apiProduct.descriptionEn,
+                        descriptionRu = apiProduct.descriptionRu,
+                        price = apiProduct.price,
+                        imageUrl = apiProduct.imageUrl,
+                        category = apiProduct.category,
+                        categoryEn = apiProduct.categoryEn,
+                        categoryRu = apiProduct.categoryRu,
+                        soldCount = apiProduct.soldCount,
+                        stock = apiProduct.stock,
+                        featured = apiProduct.featured
+                    )
+                }
+                updateProductsList()
+                if (filteredProducts.isEmpty()) {
+                    Toast.makeText(this@HomeActivity, "未找到相关商品", Toast.LENGTH_SHORT).show()
+                }
+            }.onFailure {
+                loadingIndicator.visibility = View.GONE
+                Toast.makeText(this@HomeActivity, "搜索失败", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun loadProductsFromApi() {
+        loadingIndicator.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            // Load all products
+            val productsResult = productRepository.getProducts(0, 50)
+            productsResult.onSuccess { products ->
+                allProducts = products.map { apiProduct ->
+                    Product(
+                        id = apiProduct.id,
+                        name = apiProduct.name,
+                        nameEn = apiProduct.nameEn,
+                        nameRu = apiProduct.nameRu,
+                        description = apiProduct.description,
+                        descriptionEn = apiProduct.descriptionEn,
+                        descriptionRu = apiProduct.descriptionRu,
+                        price = apiProduct.price,
+                        imageUrl = apiProduct.imageUrl,
+                        category = apiProduct.category,
+                        categoryEn = apiProduct.categoryEn,
+                        categoryRu = apiProduct.categoryRu,
+                        soldCount = apiProduct.soldCount,
+                        stock = apiProduct.stock,
+                        featured = apiProduct.featured
+                    )
+                }
+                filteredProducts = allProducts
+                updateProductsList()
+            }.onFailure {
+                Toast.makeText(this@HomeActivity, "Failed to load products", Toast.LENGTH_SHORT).show()
+            }
+            
+            // Load featured products for banner
+            val featuredResult = productRepository.getFeaturedProducts(5)
+            featuredResult.onSuccess { featuredProducts ->
+                val bannerProducts = featuredProducts.map { apiProduct ->
+                    Product(
+                        id = apiProduct.id,
+                        name = apiProduct.name,
+                        nameEn = apiProduct.nameEn,
+                        nameRu = apiProduct.nameRu,
+                        description = apiProduct.description,
+                        descriptionEn = apiProduct.descriptionEn,
+                        descriptionRu = apiProduct.descriptionRu,
+                        price = apiProduct.price,
+                        imageUrl = apiProduct.imageUrl,
+                        category = apiProduct.category,
+                        categoryEn = apiProduct.categoryEn,
+                        categoryRu = apiProduct.categoryRu,
+                        soldCount = apiProduct.soldCount,
+                        stock = apiProduct.stock,
+                        featured = apiProduct.featured
+                    )
+                }
+                if (bannerProducts.isNotEmpty()) {
+                    setupBannerWithProducts(bannerProducts)
+                }
+            }
+            
+            // Load popular products (featured ones)
+            val popularResult = productRepository.getFeaturedProducts(10)
+            popularResult.onSuccess { popularApiProducts ->
+                val popularProducts = popularApiProducts.map { apiProduct ->
+                    Product(
+                        id = apiProduct.id,
+                        name = apiProduct.name,
+                        nameEn = apiProduct.nameEn,
+                        nameRu = apiProduct.nameRu,
+                        description = apiProduct.description,
+                        descriptionEn = apiProduct.descriptionEn,
+                        descriptionRu = apiProduct.descriptionRu,
+                        price = apiProduct.price,
+                        imageUrl = apiProduct.imageUrl,
+                        category = apiProduct.category,
+                        categoryEn = apiProduct.categoryEn,
+                        categoryRu = apiProduct.categoryRu,
+                        soldCount = apiProduct.soldCount,
+                        stock = apiProduct.stock,
+                        featured = apiProduct.featured
+                    )
+                }
+                setupPopularProducts(popularProducts)
+            }
+            
+            loadingIndicator.visibility = View.GONE
+        }
+    }
+    
+    private fun setupBannerWithProducts(bannerProducts: List<Product>) {
+        bannerAdapter = BannerAdapter(bannerProducts) { product ->
+            openProductDetails(product)
+        }
+        bannerViewPager.adapter = bannerAdapter
+    }
+    
+    private fun setupPopularProducts(popularProducts: List<Product>) {
+        popularProductAdapter = ProductHorizontalAdapter(
+            popularProducts,
+            onItemClick = { product -> openProductDetails(product) },
+            onAddToCart = { product -> addToCart(product) }
+        )
+        popularProductsRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        popularProductsRecyclerView.adapter = popularProductAdapter
+    }
+    
+    private fun updateProductsList() {
         productAdapter = ProductAdapter(
             filteredProducts,
             onItemClick = { product -> openProductDetails(product) },
             onAddToCart = { product -> addToCart(product) }
         )
+        productsRecyclerView.layoutManager = LinearLayoutManager(this)
         productsRecyclerView.adapter = productAdapter
     }
 
@@ -240,22 +384,29 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun addToCart(product: Product) {
-        CartManager.addToCart(product, 1)
-        updateCartBadge()
-        Toast.makeText(this, getString(R.string.added_to_cart), Toast.LENGTH_SHORT).show()
+        if (!authRepository.isLoggedIn()) {
+            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            startActivity(intent)
+            return
+        }
+        lifecycleScope.launch {
+            cartRepository.addToCart(product.id, 1).onSuccess {
+                updateCartBadge()
+                Toast.makeText(this@HomeActivity, getString(R.string.added_to_cart), Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(this@HomeActivity, "Failed to add to cart", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun updateCartBadge() {
-        val cartCount = CartManager.getTotalCount()
-        // You can add a badge to cart icon here if needed
-    }
-
-    override fun onResume() {
-        super.onResume()
-        updateCartBadge()
-        // Refresh adapters to update language
-        setupRecyclerViews()
-        setupBanner()
+        lifecycleScope.launch {
+            cartRepository.getCart().onSuccess {
+                // Future: show item count on cart icon
+            }
+        }
     }
 }
 

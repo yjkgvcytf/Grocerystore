@@ -1,17 +1,26 @@
 package com.example.grocerystore
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.example.grocerystore.repository.CartRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CartAdapter(
     private val cartItems: List<CartItem>,
-    private val onQuantityChanged: () -> Unit
+    private val onQuantityChanged: () -> Unit,
+    private val context: Context
 ) : RecyclerView.Adapter<CartAdapter.CartViewHolder>() {
+
+    private val cartRepository = CartRepository(context)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CartViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -35,7 +44,6 @@ class CartAdapter(
         private val removeButton: TextView = itemView.findViewById(R.id.removeButton)
 
         fun bind(cartItem: CartItem) {
-            val context = itemView.context
             val product = cartItem.product
             val currentLanguage = LocaleHelper.getLocale(context)
             
@@ -49,29 +57,47 @@ class CartAdapter(
             productPrice.text = "¥${cartItem.getTotalPrice()}"
             quantityText.text = cartItem.quantity.toString()
             
-            // Set placeholder image
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            // Load product image
+            ImageHelper.loadProductImage(context, productImage, product.imageUrl)
             
             decreaseButton.setOnClickListener {
-                if (cartItem.quantity > 1) {
-                    CartManager.updateQuantity(product.id, cartItem.quantity - 1)
-                    onQuantityChanged()
+                val newQuantity = cartItem.quantity - 1
+                if (newQuantity >= 1) {
+                    updateQuantityAPI(cartItem, newQuantity)
                 }
             }
             
             increaseButton.setOnClickListener {
-                CartManager.updateQuantity(product.id, cartItem.quantity + 1)
-                onQuantityChanged()
+                updateQuantityAPI(cartItem, cartItem.quantity + 1)
             }
             
             removeButton.setOnClickListener {
-                CartManager.removeFromCart(product.id)
-                onQuantityChanged()
+                removeFromCartAPI(cartItem)
+            }
+        }
+        
+        private fun updateQuantityAPI(cartItem: CartItem, newQuantity: Int) {
+            val itemId = cartItem.id ?: return
+            
+            CoroutineScope(Dispatchers.Main).launch {
+                cartRepository.updateCartItem(itemId, newQuantity).onSuccess {
+                    onQuantityChanged()
+                }.onFailure {
+                    Toast.makeText(context, "Failed to update", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        
+        private fun removeFromCartAPI(cartItem: CartItem) {
+            val itemId = cartItem.id ?: return
+            
+            CoroutineScope(Dispatchers.Main).launch {
+                cartRepository.removeFromCart(itemId).onSuccess {
+                    onQuantityChanged()
+                }.onFailure {
+                    Toast.makeText(context, "Failed to remove", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 }
-
-
-
-

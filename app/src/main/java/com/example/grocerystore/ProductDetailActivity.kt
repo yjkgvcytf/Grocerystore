@@ -3,14 +3,19 @@ package com.example.grocerystore
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.grocerystore.repository.AuthRepository
+import com.example.grocerystore.repository.CartRepository
+import com.example.grocerystore.repository.ProductRepository
+import kotlinx.coroutines.launch
 
 class ProductDetailActivity : AppCompatActivity() {
     
@@ -23,8 +28,12 @@ class ProductDetailActivity : AppCompatActivity() {
     private lateinit var productDescription: TextView
     private lateinit var addToCartButton: Button
     private lateinit var buyNowButton: Button
+    private lateinit var loadingIndicator: ProgressBar
     
     private var product: Product? = null
+    private lateinit var cartRepository: CartRepository
+    private lateinit var authRepository: AuthRepository
+    private lateinit var productRepository: ProductRepository
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -32,22 +41,15 @@ class ProductDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_product_detail)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
-        val productId = intent.getStringExtra("product_id")
-        product = ProductData.getSampleProducts().find { it.id == productId }
+        cartRepository = CartRepository(this)
+        authRepository = AuthRepository(this)
+        productRepository = ProductRepository(this)
 
         initViews()
-        setupProductInfo()
         setupButtons()
+        loadProductFromApi()
     }
 
     private fun initViews() {
@@ -60,6 +62,45 @@ class ProductDetailActivity : AppCompatActivity() {
         productDescription = findViewById(R.id.productDescription)
         addToCartButton = findViewById(R.id.addToCartButton)
         buyNowButton = findViewById(R.id.buyNowButton)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
+    }
+
+    private fun loadProductFromApi() {
+        val productId = intent.getStringExtra("product_id") ?: return
+        
+        loadingIndicator.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            productRepository.getProductById(productId).onSuccess { apiProduct ->
+                loadingIndicator.visibility = View.GONE
+                product = Product(
+                    id = apiProduct.id,
+                    name = apiProduct.name,
+                    nameEn = apiProduct.nameEn,
+                    nameRu = apiProduct.nameRu,
+                    description = apiProduct.description,
+                    descriptionEn = apiProduct.descriptionEn,
+                    descriptionRu = apiProduct.descriptionRu,
+                    price = apiProduct.price,
+                    imageUrl = apiProduct.imageUrl,
+                    category = apiProduct.category,
+                    categoryEn = apiProduct.categoryEn,
+                    categoryRu = apiProduct.categoryRu,
+                    soldCount = apiProduct.soldCount,
+                    stock = apiProduct.stock,
+                    featured = apiProduct.featured
+                )
+                setupProductInfo()
+            }.onFailure { e ->
+                loadingIndicator.visibility = View.GONE
+                Toast.makeText(this@ProductDetailActivity, "Failed to load product: ${e.message}", Toast.LENGTH_SHORT).show()
+                // Fallback to local data
+                product = ProductData.getSampleProducts().find { it.id == productId }
+                if (product != null) {
+                    setupProductInfo()
+                }
+            }
+        }
     }
 
     private fun setupProductInfo() {
@@ -84,8 +125,8 @@ class ProductDetailActivity : AppCompatActivity() {
             productSold.text = "${formatSoldCount(p.soldCount)} ${getString(R.string.sold)}"
             productStock.text = "${getString(R.string.stock)}: ${p.stock}"
             
-            // Set placeholder image
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            // Load product image
+            ImageHelper.loadProductImage(this, productImage, p.imageUrl)
         }
     }
 
@@ -96,36 +137,49 @@ class ProductDetailActivity : AppCompatActivity() {
         
         addToCartButton.setOnClickListener {
             product?.let { p ->
-                CartManager.addToCart(p, 1)
-                android.widget.Toast.makeText(
-                    this,
-                    getString(R.string.added_to_cart),
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                lifecycleScope.launch {
+                    cartRepository.addToCart(p.id, 1).onSuccess {
+                        Toast.makeText(
+                            this@ProductDetailActivity,
+                            getString(R.string.added_to_cart),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }.onFailure {
+                        Toast.makeText(
+                            this@ProductDetailActivity,
+                            "Failed to add to cart",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         }
         
         buyNowButton.setOnClickListener {
             product?.let { p ->
-                // Add to cart first
-                CartManager.addToCart(p, 1)
-                
-                // Check login status
-                val user = UserManager.getCurrentUser(this)
-                if (user == null) {
-                    android.widget.Toast.makeText(
-                        this,
-                        "请先登录",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    startActivity(intent)
-                } else {
-                    // Navigate to order preview page
-                    val intent = Intent(this, OrderActivity::class.java)
-                    intent.putExtra("is_new_order", true)
-                    startActivity(intent)
+                lifecycleScope.launch {
+                    cartRepository.addToCart(p.id, 1).onSuccess {
+                        if (!authRepository.isLoggedIn()) {
+                            Toast.makeText(
+                                this@ProductDetailActivity,
+                                "请先登录",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            val intent = Intent(this@ProductDetailActivity, MainActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            startActivity(intent)
+                        } else {
+                            val intent = Intent(this@ProductDetailActivity, OrderActivity::class.java)
+                            intent.putExtra("is_new_order", true)
+                            startActivity(intent)
+                        }
+                    }.onFailure {
+                        Toast.makeText(
+                            this@ProductDetailActivity,
+                            "Failed to add to cart",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }

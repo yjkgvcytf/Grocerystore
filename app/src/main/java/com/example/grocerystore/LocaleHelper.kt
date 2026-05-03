@@ -28,14 +28,14 @@ object LocaleHelper {
     }
 
     private fun updateResources(context: Context, languageCode: String): Context {
-        val locale = Locale(languageCode)
+        val locale = Locale.forLanguageTag(languageCode)
         Locale.setDefault(locale)
-
         val resources: Resources = context.resources
         val configuration: Configuration = resources.configuration
-        configuration.setLocale(locale)
+        @Suppress("DEPRECATION")
+        configuration.locale = locale
+        @Suppress("DEPRECATION")
         configuration.setLayoutDirection(locale)
-
         return context.createConfigurationContext(configuration)
     }
 

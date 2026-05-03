@@ -1,0 +1,92 @@
+{
+  "app": {
+    "name": "Grocery Store",
+    "tagline": "Quality Products, Convenient Life"
+  },
+  "nav": {
+    "home": "Home",
+    "categories": "Categories",
+    "cart": "Cart",
+    "orders": "Orders",
+    "profile": "Profile"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "rememberMe": "Remember Me",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginTitle": "Welcome Back",
+    "registerTitle": "Create Account"
+  },
+  "product": {
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "soldCount": "Sold",
+    "stock": "Stock",
+    "featured": "Featured",
+    "allProducts": "All Products",
+    "search": "Search products...",
+    "noProducts": "No products available",
+    "details": "Product Details"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "checkout": "Checkout",
+    "originalPrice": "Original Price",
+    "discount": "Discount",
+    "reduction": "Reduction",
+    "finalTotal": "Total",
+    "delivery": "Delivery",
+    "free": "Free"
+  },
+  "order": {
+    "title": "My Orders",
+    "empty": "No orders yet",
+    "orderNumber": "Order Number",
+    "orderDate": "Order Date",
+    "status": "Status",
+    "total": "Total",
+    "viewDetails": "View Details",
+    "createOrder": "Place Order",
+    "recipientName": "Recipient Name",
+    "recipientPhone": "Recipient Phone",
+    "shippingAddress": "Shipping Address",
+    "statuses": {
+      "PENDING": "Pending",
+      "PROCESSING": "Processing",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "editProfile": "Edit Profile",
+    "recentOrders": "Recent Orders",
+    "viewAllOrders": "View All Orders"
+  },
+  "category": {
+    "title": "Categories",
+    "all": "All"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "price": "Price"
+  }
+}

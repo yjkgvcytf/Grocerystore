@@ -1,0 +1,45 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: grocery-backend
+  datasource:
+    # useUnicode + UTF-8 + utf8mb4 排序规则，避免中文描述在库中错乱
+    url: jdbc:mysql://localhost:3306/grocery_store?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+  jackson:
+    default-property-inclusion: non_null
+
+jwt:
+  secret: ${JWT_SECRET:ChangeThisJwtSecretKeyForLocalDevelopmentOnly123456789}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+logging:
+  level:
+    com.example.grocerystore: DEBUG
+    org.springframework.security: DEBUG

@@ -1,0 +1,87 @@
+<mxfile host="app.diagrams.net" agent="Cursor">
+  <diagram id="component-diagram" name="Component Diagram">
+    <mxGraphModel dx="2054" dy="1113" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="web" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="Web Client&#xa;React + TypeScript&#xa;Axios, Zustand, i18next" vertex="1">
+          <mxGeometry height="110" width="240" x="320" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="android" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="Android Client&#xa;Kotlin&#xa;Retrofit, OkHttp, Coroutines" vertex="1">
+          <mxGeometry height="110" width="240" x="320" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="api" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="REST API&#xa;JSON / HTTP" vertex="1">
+          <mxGeometry height="90" width="180" x="350" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="controller" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="Controller&#xa;AuthController&#xa;ProductController&#xa;CartController&#xa;OrderController" vertex="1">
+          <mxGeometry height="130" width="240" x="670" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="security" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;fontStyle=1;" value="Security&#xa;Spring Security&#xa;JwtAuthenticationFilter&#xa;JwtTokenProvider" vertex="1">
+          <mxGeometry height="120" width="250" x="670" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="dto" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="DTO&#xa;request / response&#xa;AuthResponse&#xa;OrderResponse&#xa;CartResponse" vertex="1">
+          <mxGeometry height="120" width="230" x="1010" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="service" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="Service&#xa;AuthService&#xa;ProductService&#xa;CartService&#xa;OrderService&#xa;UserService" vertex="1">
+          <mxGeometry height="140" width="240" x="1010" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="repository" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="Repository / DAO&#xa;UserRepository&#xa;ProductRepository&#xa;CartItemRepository&#xa;OrderRepository" vertex="1">
+          <mxGeometry height="130" width="250" x="1010" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="domain" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Domain / Entity&#xa;User, Product, Category&#xa;CartItem, Order, OrderItem&#xa;OrderStatus" vertex="1">
+          <mxGeometry height="120" width="250" x="670" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="exception" parent="1" style="shape=component;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;fontStyle=1;" value="Exception Handling&#xa;GlobalExceptionHandler&#xa;ResourceNotFoundException" vertex="1">
+          <mxGeometry height="100" width="250" x="670" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="database" parent="1" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="MySQL Database&#xa;users, products, categories&#xa;cart_items, orders, order_items" vertex="1">
+          <mxGeometry height="120" width="230" x="1390" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="e_web_api" edge="1" parent="1" source="web" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="api" value="HTTP / JSON">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_android_api" edge="1" parent="1" source="android" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="api" value="HTTP / JSON">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_api_controller" edge="1" parent="1" source="api" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="controller" value="routes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_controller_service" edge="1" parent="1" source="controller" style="endArrow=block;startArrow=diamondThin;startFill=0;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="service" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_service_repository" edge="1" parent="1" source="service" style="endArrow=block;startArrow=diamondThin;startFill=0;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="repository" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_repository_db" edge="1" parent="1" source="repository" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="database" value="JPA / SQL">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_repository_domain" edge="1" parent="1" source="repository" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="domain" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_service_domain" edge="1" parent="1" source="service" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="domain" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_service_dto" edge="1" parent="1" source="service" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="dto" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_controller_dto" edge="1" parent="1" source="controller" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="dto" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_security_controller" edge="1" parent="1" source="security" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="controller" value="filter / auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_security_service" edge="1" parent="1" source="security" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="service" value="use">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_exception_controller" edge="1" parent="1" source="exception" style="endArrow=block;html=1;rounded=0;dashed=1;strokeColor=#666666;fontSize=12;" target="controller" value="handle errors">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="790" />
+              <mxPoint x="610" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

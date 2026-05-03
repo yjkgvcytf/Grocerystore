@@ -9,14 +9,18 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.ProgressBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.grocerystore.api.AuthResponse
+import com.example.grocerystore.repository.AuthRepository
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     
@@ -26,7 +30,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var loginButton: Button
     private lateinit var registerLink: TextView
     private lateinit var languageSpinner: Spinner
+    private lateinit var progressBar: ProgressBar
     private lateinit var prefs: SharedPreferences
+    
+    private lateinit var authRepository: AuthRepository
+    private var hasSpinnerInitialized = false
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -34,8 +42,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+        
+        // Check if already logged in
+        authRepository = AuthRepository(this)
+        if (authRepository.isLoggedIn()) {
+            navigateToHome()
+            return
+        }
         
         val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
@@ -66,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         loginButton = findViewById(R.id.loginButton)
         registerLink = findViewById(R.id.registerLink)
         languageSpinner = findViewById(R.id.languageSpinner)
+        progressBar = findViewById(R.id.progressBar)
     }
 
     private fun setupLanguageSpinner() {
@@ -88,9 +103,14 @@ class MainActivity : AppCompatActivity() {
             else -> 0
         }
         languageSpinner.setSelection(position)
+        hasSpinnerInitialized = false
 
         languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (!hasSpinnerInitialized) {
+                    hasSpinnerInitialized = true
+                    return
+                }
                 val languageCode = when (position) {
                     0 -> "zh"
                     1 -> "en"
@@ -153,22 +173,75 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performLogin(email: String, password: String) {
-        // TODO: Implement actual login logic with your backend API
-        Toast.makeText(
-            this,
-            getString(R.string.login_success),
-            Toast.LENGTH_SHORT
-        ).show()
-        
-        // Save user info (for demo, use email as name)
-        val fullName = email.split("@")[0] // Simple name extraction
-        val phone = prefs.getString("saved_phone", "") ?: ""
-        UserManager.login(this, email, fullName, phone)
-        
-        // Navigate to home screen after successful login
+        showLoading(true)
+
+        lifecycleScope.launch {
+            try {
+                val result = authRepository.login(email, password)
+
+                // Process result OUTSIDE the coroutine so try-catch covers it
+                processLoginResult(result)
+            } catch (e: Exception) {
+                showLoading(false)
+                Toast.makeText(
+                    this@MainActivity,
+                    "登录异常: ${e.message ?: getString(R.string.login_failed)}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun processLoginResult(result: Result<AuthResponse>) {
+        showLoading(false)
+
+        try {
+            result.onSuccess { _ ->
+                if (authRepository.isLoggedIn()) {
+                    Toast.makeText(this, getString(R.string.login_success), Toast.LENGTH_SHORT).show()
+                    navigateToHome()
+                } else {
+                    Toast.makeText(this, "登录状态异常，请重试", Toast.LENGTH_SHORT).show()
+                }
+            }.onFailure { error ->
+                val raw = error.message
+                val errorMessage = when {
+                    raw == null || raw.isEmpty() -> getString(R.string.login_failed)
+                    raw.contains("Unable to resolve host", ignoreCase = true) ->
+                        "无法连接到服务器，请检查网络连接"
+                    raw.contains("timeout", ignoreCase = true) ->
+                        "连接超时，请稍后重试"
+                    raw.contains("connection", ignoreCase = true) ->
+                        "连接失败，请检查服务器是否运行"
+                    raw.contains("401", ignoreCase = true) ->
+                        "邮箱或密码错误"
+                    raw.contains("404", ignoreCase = true) ->
+                        "服务器地址错误"
+                    raw.contains("邮箱或密码错误") -> raw
+                    raw.contains("Invalid email") -> "邮箱或密码错误"
+                    raw.contains("Bad credentials") -> "邮箱或密码错误"
+                    else -> raw
+                }
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            // Failsafe: if Result processing itself throws (e.g. Gson error), show generic message
+            Toast.makeText(this, getString(R.string.login_failed), Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private fun navigateToHome() {
         val intent = Intent(this, HomeActivity::class.java)
         startActivity(intent)
         finish()
+    }
+    
+    private fun showLoading(show: Boolean) {
+        val loadingOverlay = findViewById<View>(R.id.loadingOverlay)
+        loadingOverlay?.visibility = if (show) View.VISIBLE else View.GONE
+        loginButton.isEnabled = !show
+        emailEditText.isEnabled = !show
+        passwordEditText.isEnabled = !show
     }
 
     private fun saveCredentials(email: String, password: String) {

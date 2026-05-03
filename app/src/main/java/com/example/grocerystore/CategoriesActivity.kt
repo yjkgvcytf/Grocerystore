@@ -10,13 +10,14 @@ import android.widget.ImageButton
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
+import com.example.grocerystore.repository.AuthRepository
+import com.example.grocerystore.repository.CartRepository
+import kotlinx.coroutines.launch
 
 class CategoriesActivity : AppCompatActivity() {
     
@@ -32,6 +33,10 @@ class CategoriesActivity : AppCompatActivity() {
     
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var popularProductAdapter: ProductGridAdapter
+    
+    private lateinit var cartRepository: CartRepository
+    private lateinit var authRepository: AuthRepository
+    private var hasSpinnerInitialized = false
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -39,15 +44,10 @@ class CategoriesActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_categories)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        cartRepository = CartRepository(this)
+        authRepository = AuthRepository(this)
 
         initViews()
         setupLanguageSpinner()
@@ -87,9 +87,14 @@ class CategoriesActivity : AppCompatActivity() {
             else -> 0
         }
         languageSpinner.setSelection(position)
+        hasSpinnerInitialized = false
 
         languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (!hasSpinnerInitialized) {
+                    hasSpinnerInitialized = true
+                    return
+                }
                 val languageCode = when (position) {
                     0 -> "zh"
                     1 -> "en"
@@ -166,8 +171,20 @@ class CategoriesActivity : AppCompatActivity() {
     }
 
     private fun addToCart(product: Product) {
-        CartManager.addToCart(product, 1)
-        Toast.makeText(this, getString(R.string.added_to_cart), Toast.LENGTH_SHORT).show()
+        if (!authRepository.isLoggedIn()) {
+            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+            startActivity(intent)
+            return
+        }
+        lifecycleScope.launch {
+            cartRepository.addToCart(product.id, 1).onSuccess {
+                Toast.makeText(this@CategoriesActivity, getString(R.string.added_to_cart), Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(this@CategoriesActivity, "Failed to add to cart", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onResume() {

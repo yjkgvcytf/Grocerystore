@@ -6,14 +6,16 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.grocerystore.repository.CartRepository
+import com.example.grocerystore.repository.AuthRepository
+import kotlinx.coroutines.launch
 
 class CartActivity : AppCompatActivity() {
     
@@ -29,8 +31,17 @@ class CartActivity : AppCompatActivity() {
     private lateinit var youSaveText: TextView
     private lateinit var continueShoppingButton: Button
     private lateinit var checkoutButton: Button
+    private lateinit var loadingIndicator: ProgressBar
     
     private lateinit var cartAdapter: CartAdapter
+    private lateinit var cartRepository: CartRepository
+    private lateinit var authRepository: AuthRepository
+    
+    private var cartItems: List<CartItem> = emptyList()
+    private var currentOriginalPrice: Double = 0.0
+    private var currentDiscount: Double = 0.0
+    private var currentReduction: Double = 0.0
+    private var currentFinalTotal: Double = 0.0
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -38,20 +49,15 @@ class CartActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_cart)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        cartRepository = CartRepository(this)
+        authRepository = AuthRepository(this)
 
         initViews()
         setupRecyclerView()
         setupButtons()
-        updateCart()
+        loadCartFromApi()
     }
 
     private fun initViews() {
@@ -67,12 +73,14 @@ class CartActivity : AppCompatActivity() {
         youSaveText = findViewById(R.id.youSaveText)
         continueShoppingButton = findViewById(R.id.continueShoppingButton)
         checkoutButton = findViewById(R.id.checkoutButton)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
     }
 
     private fun setupRecyclerView() {
-        cartAdapter = CartAdapter(CartManager.getCartItems()) {
-            updateCart()
-        }
+        cartAdapter = CartAdapter(cartItems, {
+            // Refresh cart when item is removed
+            loadCartFromApi()
+        }, this)
         cartRecyclerView.layoutManager = LinearLayoutManager(this)
         cartRecyclerView.adapter = cartAdapter
     }
@@ -83,14 +91,12 @@ class CartActivity : AppCompatActivity() {
         }
         
         continueShoppingButton.setOnClickListener {
-            // Return to home page
             val intent = Intent(this, HomeActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             startActivity(intent)
             finish()
         }
         
-        // Ensure button is clickable
         continueShoppingButton.isClickable = true
         continueShoppingButton.isEnabled = true
         
@@ -98,14 +104,11 @@ class CartActivity : AppCompatActivity() {
             handleCheckout()
         }
         
-        // Ensure button is clickable
         checkoutButton.isClickable = true
         checkoutButton.isEnabled = true
     }
 
     private fun handleCheckout() {
-        // Step 1: Check if cart is empty
-        val cartItems = CartManager.getCartItems()
         if (cartItems.isEmpty()) {
             Toast.makeText(
                 this,
@@ -115,15 +118,8 @@ class CartActivity : AppCompatActivity() {
             return
         }
         
-        // Step 2: Check login status
-        val user = UserManager.getCurrentUser(this)
-        if (user == null) {
-            // Not logged in, redirect to login page
-            Toast.makeText(
-                this,
-                "请先登录",
-                Toast.LENGTH_SHORT
-            ).show()
+        if (!authRepository.isLoggedIn()) {
+            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show()
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
             startActivity(intent)
@@ -131,42 +127,90 @@ class CartActivity : AppCompatActivity() {
             return
         }
         
-        // Step 3: Logged in, navigate to order preview page
-        android.util.Log.d("CartActivity", "Starting OrderActivity with is_new_order=true")
         val intent = Intent(this, OrderActivity::class.java).apply {
             putExtra("is_new_order", true)
-            putExtra("order_id", null as String?)
         }
         startActivity(intent)
     }
 
-    private fun updateCart() {
-        val cartItems = CartManager.getCartItems()
-        
-        if (cartItems.isEmpty()) {
-            cartRecyclerView.visibility = View.GONE
-            emptyCartLayout.visibility = View.VISIBLE
-            checkoutButton.isEnabled = false
-            continueShoppingButton.isEnabled = false
-            updatePriceDetails(0.0, 0.0, 0.0, 0.0)
-        } else {
-            cartRecyclerView.visibility = View.VISIBLE
-            emptyCartLayout.visibility = View.GONE
-            checkoutButton.isEnabled = true
-            continueShoppingButton.isEnabled = true
-            
-            val originalTotal = CartManager.getOriginalTotalPrice()
-            val discount = CartManager.getDiscount()
-            val reduction = CartManager.getReduction()
-            val finalTotal = CartManager.getFinalTotal()
-            
-            updatePriceDetails(originalTotal, discount, reduction, finalTotal)
-            
-            cartAdapter = CartAdapter(cartItems) {
-                updateCart()
-            }
-            cartRecyclerView.adapter = cartAdapter
+    private fun loadCartFromApi() {
+        if (!authRepository.isLoggedIn()) {
+            showEmptyCart()
+            return
         }
+
+        loadingIndicator.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            cartRepository.getCart().onSuccess { cartResponse ->
+                loadingIndicator.visibility = View.GONE
+                
+                // Convert API cart items to local CartItem
+                cartItems = cartResponse.items.map { apiItem ->
+                    CartItem(
+                        product = Product(
+                            id = apiItem.product.id,
+                            name = apiItem.product.name,
+                            nameEn = apiItem.product.nameEn,
+                            nameRu = apiItem.product.nameRu,
+                            description = apiItem.product.description,
+                            descriptionEn = apiItem.product.descriptionEn,
+                            descriptionRu = apiItem.product.descriptionRu,
+                            price = apiItem.product.price,
+                            imageUrl = apiItem.product.imageUrl,
+                            category = apiItem.product.category,
+                            categoryEn = apiItem.product.categoryEn,
+                            categoryRu = apiItem.product.categoryRu,
+                            soldCount = apiItem.product.soldCount,
+                            stock = apiItem.product.stock,
+                            featured = apiItem.product.featured
+                        ),
+                        quantity = apiItem.quantity,
+                        id = apiItem.id
+                    )
+                }
+                
+                currentOriginalPrice = cartResponse.originalPrice
+                currentDiscount = cartResponse.discount
+                currentReduction = cartResponse.reduction
+                currentFinalTotal = cartResponse.finalTotal
+                
+                updateUI()
+            }.onFailure {
+                loadingIndicator.visibility = View.GONE
+                Toast.makeText(this@CartActivity, "Failed to load cart", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun updateUI() {
+        if (cartItems.isEmpty()) {
+            showEmptyCart()
+        } else {
+            showCartItems()
+        }
+    }
+
+    private fun showEmptyCart() {
+        cartRecyclerView.visibility = View.GONE
+        emptyCartLayout.visibility = View.VISIBLE
+        checkoutButton.isEnabled = false
+        continueShoppingButton.isEnabled = false
+        updatePriceDetails(0.0, 0.0, 0.0, 0.0)
+    }
+
+    private fun showCartItems() {
+        cartRecyclerView.visibility = View.VISIBLE
+        emptyCartLayout.visibility = View.GONE
+        checkoutButton.isEnabled = true
+        continueShoppingButton.isEnabled = true
+        
+        updatePriceDetails(currentOriginalPrice, currentDiscount, currentReduction, currentFinalTotal)
+
+        cartAdapter = CartAdapter(cartItems, {
+            loadCartFromApi()
+        }, this)
+        cartRecyclerView.adapter = cartAdapter
     }
 
     private fun updatePriceDetails(
@@ -178,7 +222,6 @@ class CartActivity : AppCompatActivity() {
         originalPrice.text = String.format("¥%.2f", originalTotal)
         finalTotalPrice.text = String.format("¥%.2f", finalTotal)
         
-        // Show/hide discount
         if (discount > 0) {
             discountLayout.visibility = View.VISIBLE
             discountAmount.text = String.format("-¥%.2f", discount)
@@ -186,7 +229,6 @@ class CartActivity : AppCompatActivity() {
             discountLayout.visibility = View.GONE
         }
         
-        // Show/hide reduction
         if (reduction > 0) {
             reductionLayout.visibility = View.VISIBLE
             reductionAmount.text = String.format("-¥%.2f", reduction)
@@ -194,7 +236,6 @@ class CartActivity : AppCompatActivity() {
             reductionLayout.visibility = View.GONE
         }
         
-        // Show total savings
         val totalSavings = discount + reduction
         if (totalSavings > 0) {
             youSaveText.text = String.format(
@@ -210,6 +251,6 @@ class CartActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateCart()
+        loadCartFromApi()
     }
 }

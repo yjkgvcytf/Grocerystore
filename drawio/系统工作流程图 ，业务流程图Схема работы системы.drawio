@@ -1,0 +1,195 @@
+<mxfile host="app.diagrams.net" agent="Cursor">
+  <diagram id="system-workflow" name="System Workflow">
+    <mxGraphModel dx="2162" dy="1172" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=22;fontStyle=1;" value="Схема работы системы Grocery Store" vertex="1">
+          <mxGeometry height="40" width="650" x="520" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="start" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="Открытие Web- или Android-приложения" vertex="1">
+          <mxGeometry height="60" width="250" x="710" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_decision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" value="Пользователь авторизован?" vertex="1">
+          <mxGeometry height="100" width="170" x="750" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="login" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Вход в систему / регистрация" vertex="1">
+          <mxGeometry height="60" width="220" x="340" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="auth_api" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" value="AuthController → AuthService&#xa;проверка данных и выдача JWT" vertex="1">
+          <mxGeometry height="70" width="290" x="305" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="users_db" parent="1" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" value="users" vertex="1">
+          <mxGeometry height="70" width="160" x="370" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="catalog" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Просмотр каталога товаров" vertex="1">
+          <mxGeometry height="60" width="220" x="730" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="catalog_action" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" value="Выбор действия" vertex="1">
+          <mxGeometry height="100" width="170" x="755" y="445" as="geometry" />
+        </mxCell>
+        <mxCell id="search" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Поиск товара" vertex="1">
+          <mxGeometry height="60" width="190" x="390" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="category" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Просмотр товаров по категории" vertex="1">
+          <mxGeometry height="60" width="230" x="725" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="detail" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Просмотр карточки товара" vertex="1">
+          <mxGeometry height="60" width="220" x="970" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="products_db" parent="1" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" value="products / categories" vertex="1">
+          <mxGeometry height="75" width="210" x="735" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="add_cart" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Добавление товара в корзину" vertex="1">
+          <mxGeometry height="60" width="240" x="1260" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="cart_api" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" value="CartController → CartService&#xa;создание или обновление CartItem" vertex="1">
+          <mxGeometry height="70" width="280" x="1240" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="cart_db" parent="1" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" value="cart_items" vertex="1">
+          <mxGeometry height="70" width="160" x="1230" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="cart_view" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Просмотр и изменение корзины" vertex="1">
+          <mxGeometry height="60" width="250" x="715" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="cart_empty" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" value="Корзина пуста?" vertex="1">
+          <mxGeometry height="100" width="170" x="750" y="955" as="geometry" />
+        </mxCell>
+        <mxCell id="back_catalog" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Возврат к каталогу" vertex="1">
+          <mxGeometry height="60" width="210" x="470" y="975" as="geometry" />
+        </mxCell>
+        <mxCell id="checkout" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Ввод данных доставки&#xa;и подтверждение заказа" vertex="1">
+          <mxGeometry height="70" width="250" x="1010" y="975" as="geometry" />
+        </mxCell>
+        <mxCell id="order_api" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" value="OrderController → OrderService&#xa;создание Order и OrderItem&#xa;очистка корзины" vertex="1">
+          <mxGeometry height="90" width="290" x="1380" y="965" as="geometry" />
+        </mxCell>
+        <mxCell id="orders_db" parent="1" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;" value="orders / order_items" vertex="1">
+          <mxGeometry height="75" width="210" x="1420" y="845" as="geometry" />
+        </mxCell>
+        <mxCell id="orders_view" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Просмотр списка заказов&#xa;и статуса заказа" vertex="1">
+          <mxGeometry height="70" width="240" x="1070" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="status_update" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;" value="Обновление статуса заказа&#xa;через API" vertex="1">
+          <mxGeometry height="70" width="230" x="1400" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="end" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="Заказ создан / данные синхронизированы&#xa;между Web и Android" vertex="1">
+          <mxGeometry height="70" width="290" x="1380" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="e_start_auth" edge="1" parent="1" source="start" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="auth_decision">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_auth_no" edge="1" parent="1" source="auth_decision" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="login" value="нет">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_login_api" edge="1" parent="1" source="login" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="auth_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_auth_users" edge="1" parent="1" source="auth_api" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="users_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_users_catalog" edge="1" parent="1" source="users_db" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="catalog" value="JWT">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="570" />
+              <mxPoint x="840" y="570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_auth_yes" edge="1" parent="1" source="auth_decision" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="catalog" value="да">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_catalog_action" edge="1" parent="1" source="catalog" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="catalog_action">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_action_search" edge="1" parent="1" source="catalog_action" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="search" value="поиск">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="490" />
+              <mxPoint x="650" y="620" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_action_category" edge="1" parent="1" source="catalog_action" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="category" value="категория">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_action_detail" edge="1" parent="1" source="catalog_action" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="detail" value="товар">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_detail_cart" edge="1" parent="1" source="detail" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="add_cart" value="добавить">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_search_db" edge="1" parent="1" source="search" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="products_db">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="778" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_category_db" edge="1" parent="1" source="category" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="products_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_db" edge="1" parent="1" source="detail" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="products_db">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_add_cart_api" edge="1" parent="1" source="add_cart" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="cart_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cart_api_db" edge="1" parent="1" source="cart_api" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;exitX=0.25;exitY=1;exitDx=0;exitDy=0;" target="cart_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cart_db_view" edge="1" parent="1" source="cart_db" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="cart_view">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cart_view_empty" edge="1" parent="1" source="cart_view" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="cart_empty">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_empty_yes" edge="1" parent="1" source="cart_empty" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="back_catalog" value="да">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_empty_no" edge="1" parent="1" source="cart_empty" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="checkout" value="нет">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_back_catalog" edge="1" parent="1" source="back_catalog" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="catalog">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="1005" />
+              <mxPoint x="360" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_checkout_order_api" edge="1" parent="1" source="checkout" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="order_api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_order_api_orders_db" edge="1" parent="1" source="order_api" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="orders_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_orders_db_end" edge="1" parent="1" source="order_api" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_catalog_orders" edge="1" parent="1" source="catalog" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;fontSize=12;" target="orders_view" value="история">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_orders_view_db" edge="1" parent="1" source="orders_view" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="orders_db">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1680" y="370" />
+              <mxPoint x="1680" y="883" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_status_db" edge="1" parent="1" source="status_update" style="endArrow=block;html=1;rounded=0;strokeColor=#333333;" target="orders_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

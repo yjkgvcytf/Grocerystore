@@ -9,12 +9,17 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.grocerystore.repository.AuthRepository
+import com.example.grocerystore.repository.CartRepository
+import com.example.grocerystore.repository.OrderRepository
+import com.example.grocerystore.api.Order as ApiOrder
+import com.example.grocerystore.api.OrderItem as ApiOrderItem
+import com.example.grocerystore.api.User
+import kotlinx.coroutines.launch
 
 class OrderActivity : AppCompatActivity() {
     
@@ -32,7 +37,17 @@ class OrderActivity : AppCompatActivity() {
     
     private var orderId: String? = null
     private var isNewOrder: Boolean = false
-    private var currentUser: User? = null
+    
+    private lateinit var cartRepository: CartRepository
+    private lateinit var orderRepository: OrderRepository
+    private lateinit var authRepository: AuthRepository
+    
+    // Current order data for submission
+    private var currentOrderItems: List<ApiOrderItem> = emptyList()
+    private var currentOriginalPrice: Double = 0.0
+    private var currentDiscount: Double = 0.0
+    private var currentReduction: Double = 0.0
+    private var currentFinalTotal: Double = 0.0
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -40,15 +55,12 @@ class OrderActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_order)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        // Initialize repositories
+        cartRepository = CartRepository(this)
+        orderRepository = OrderRepository(this)
+        authRepository = AuthRepository(this)
 
         // Get intent data
         orderId = intent.getStringExtra("order_id")
@@ -143,17 +155,8 @@ class OrderActivity : AppCompatActivity() {
     }
 
     private fun loadOrderPreview() {
-        // Step 1: Get cart items
-        val cartItems = CartManager.getCartItems()
-        if (cartItems.isEmpty()) {
-            Toast.makeText(this, getString(R.string.empty_cart), Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-        
-        // Step 2: Get current user
-        currentUser = UserManager.getCurrentUser(this)
-        if (currentUser == null) {
+        // Check if logged in
+        if (!authRepository.isLoggedIn()) {
             Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show()
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
@@ -162,22 +165,53 @@ class OrderActivity : AppCompatActivity() {
             return
         }
         
-        // Step 3: Display order preview
-        displayOrderPreview(cartItems)
-        submitOrderButton.text = getString(R.string.submit_order)
-        submitOrderButton.isEnabled = true
+        lifecycleScope.launch {
+            cartRepository.getCart().onSuccess { cartResponse ->
+                if (cartResponse.items.isEmpty()) {
+                    Toast.makeText(this@OrderActivity, getString(R.string.empty_cart), Toast.LENGTH_SHORT).show()
+                    finish()
+                    return@launch
+                }
+                
+                // Store order data
+                currentOrderItems = cartResponse.items.map { item ->
+                    ApiOrderItem(
+                        id = item.id,
+                        productId = item.product.id,
+                        productName = item.product.name,
+                        productNameEn = item.product.nameEn,
+                        imageUrl = item.product.imageUrl,
+                        unitPrice = item.product.price,
+                        quantity = item.quantity,
+                        subtotal = item.subtotal
+                    )
+                }
+                currentOriginalPrice = cartResponse.originalPrice
+                currentDiscount = cartResponse.discount
+                currentReduction = cartResponse.reduction
+                currentFinalTotal = cartResponse.finalTotal
+                
+                displayOrderPreview()
+                submitOrderButton.text = getString(R.string.submit_order)
+                submitOrderButton.isEnabled = true
+            }.onFailure { e ->
+                Toast.makeText(this@OrderActivity, "Failed to load cart: ${e.message}", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
     }
 
     private fun loadExistingOrder() {
         orderId?.let { id ->
-            val order = OrderManager.getOrderById(id)
-            if (order != null) {
-                displayOrder(order)
-                submitOrderButton.text = getString(R.string.view_order)
-                submitOrderButton.isEnabled = false
-            } else {
-                Toast.makeText(this, "订单不存在", Toast.LENGTH_SHORT).show()
-                finish()
+            lifecycleScope.launch {
+                orderRepository.getOrderById(id).onSuccess { order ->
+                    displayOrder(order)
+                    submitOrderButton.text = getString(R.string.view_order)
+                    submitOrderButton.isEnabled = false
+                }.onFailure { e ->
+                    Toast.makeText(this@OrderActivity, "订单不存在: ${e.message}", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
             }
         } ?: run {
             Toast.makeText(this, "订单ID无效", Toast.LENGTH_SHORT).show()
@@ -185,24 +219,18 @@ class OrderActivity : AppCompatActivity() {
         }
     }
 
-    private fun displayOrderPreview(items: List<CartItem>) {
-        // Calculate prices
-        val originalTotal = CartManager.getOriginalTotalPrice()
-        val discount = CartManager.getDiscount()
-        val reduction = CartManager.getReduction()
-        val finalTotal = CartManager.getFinalTotal()
-        
+    private fun displayOrderPreview() {
         // Display order items
-        val adapter = OrderProductAdapter(items)
+        val adapter = OrderProductAdapter(currentOrderItems)
         orderItemsRecyclerView.adapter = adapter
         
         // Display price details
-        originalPrice.text = String.format("¥%.2f", originalTotal)
+        originalPrice.text = String.format("¥%.2f", currentOriginalPrice)
         deliveryPrice.text = getString(R.string.free)
-        finalTotalPrice.text = String.format("¥%.2f", finalTotal)
+        finalTotalPrice.text = String.format("¥%.2f", currentFinalTotal)
     }
 
-    private fun displayOrder(order: Order) {
+    private fun displayOrder(order: ApiOrder) {
         // Display order items
         val adapter = OrderProductAdapter(order.items)
         orderItemsRecyclerView.adapter = adapter
@@ -214,16 +242,8 @@ class OrderActivity : AppCompatActivity() {
     }
 
     private fun submitOrder() {
-        // Step 1: Validate cart items
-        val cartItems = CartManager.getCartItems()
-        if (cartItems.isEmpty()) {
-            Toast.makeText(this, getString(R.string.empty_cart), Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-        
-        // Step 2: Validate user
-        val user = currentUser ?: UserManager.getCurrentUser(this)
+        // Get user info
+        val user = authRepository.getCurrentUser()
         if (user == null) {
             Toast.makeText(this, "用户信息丢失，请重新登录", Toast.LENGTH_SHORT).show()
             val intent = Intent(this, MainActivity::class.java)
@@ -233,27 +253,31 @@ class OrderActivity : AppCompatActivity() {
             return
         }
         
-        // Step 3: Create order
-        val order = OrderManager.createOrder(
-            items = cartItems,
-            shippingAddress = user.shippingAddress.ifEmpty { "未设置地址" },
-            recipientName = user.fullName,
-            recipientPhone = user.phone
-        )
-        
-        // Step 4: Clear cart
-        CartManager.clearCart()
-        
-        // Step 5: Show success message
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.order_success))
-            .setMessage(getString(R.string.order_success_message))
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                // Clear the order preview and go back
-                finish()
+        lifecycleScope.launch {
+            val recipientName = user.fullName ?: "Unknown"
+            val recipientPhone = user.phone ?: "Unknown"
+            val shippingAddress = user.shippingAddress ?: "未设置地址"
+            
+            orderRepository.createOrder(recipientName, recipientPhone, shippingAddress).onSuccess {
+                // Order created successfully, clear cart
+                cartRepository.clearCart()
+                
+                AlertDialog.Builder(this@OrderActivity)
+                    .setTitle(getString(R.string.order_success))
+                    .setMessage(getString(R.string.order_success_message))
+                    .setPositiveButton(getString(R.string.ok)) { _, _ ->
+                        // Navigate to orders page
+                        val intent = Intent(this@OrderActivity, OrdersActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        startActivity(intent)
+                        finish()
+                    }
+                    .setCancelable(false)
+                    .show()
+            }.onFailure { e ->
+                Toast.makeText(this@OrderActivity, "提交订单失败: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            .setCancelable(false)
-            .show()
+        }
     }
 
     override fun onResume() {

@@ -54,8 +54,8 @@ class ProductGridAdapter(
             productPrice.text = "¥${product.price}"
             productSold.text = "${formatSoldCount(product.soldCount)} ${context.getString(R.string.sold)}"
             
-            // Set placeholder image
-            productImage.setImageResource(android.R.drawable.ic_menu_gallery)
+            // Load product image
+            ImageHelper.loadProductImage(context, productImage, product.imageUrl)
             
             itemView.setOnClickListener {
                 onItemClick(product)

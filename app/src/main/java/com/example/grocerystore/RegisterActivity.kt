@@ -10,11 +10,12 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.grocerystore.api.AuthResponse
+import com.example.grocerystore.repository.AuthRepository
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
     
@@ -27,6 +28,11 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var backButton: ImageButton
     private lateinit var loginLink: android.widget.TextView
     private lateinit var languageSpinner: Spinner
+    private lateinit var loadingOverlay: android.widget.FrameLayout
+    private lateinit var loadingIndicator: android.widget.ProgressBar
+
+    private lateinit var authRepository: AuthRepository
+    private var hasSpinnerInitialized = false
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -34,21 +40,15 @@ class RegisterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_register)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
         initViews()
         setupLanguageSpinner()
         setupRegisterButton()
         setupBackButton()
         setupLoginLink()
+
+        authRepository = AuthRepository(this)
     }
 
     private fun initViews() {
@@ -61,6 +61,8 @@ class RegisterActivity : AppCompatActivity() {
         backButton = findViewById(R.id.backButton)
         loginLink = findViewById(R.id.loginLink)
         languageSpinner = findViewById(R.id.languageSpinner)
+        loadingOverlay = findViewById(R.id.loadingOverlay)
+        loadingIndicator = findViewById(R.id.loadingIndicator)
     }
 
     private fun setupLanguageSpinner() {
@@ -83,9 +85,14 @@ class RegisterActivity : AppCompatActivity() {
             else -> 0
         }
         languageSpinner.setSelection(position)
+        hasSpinnerInitialized = false
 
         languageSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (!hasSpinnerInitialized) {
+                    hasSpinnerInitialized = true
+                    return
+                }
                 val languageCode = when (position) {
                     0 -> "zh"
                     1 -> "en"
@@ -192,20 +199,87 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun performRegistration(fullName: String, email: String, phone: String, password: String) {
-        // TODO: Implement actual registration logic with your backend API
-        Toast.makeText(
-            this,
-            getString(R.string.register_success),
-            Toast.LENGTH_SHORT
-        ).show()
-        
-        // Auto login after registration
-        UserManager.login(this, email, fullName, phone)
-        
-        // Navigate to home screen after successful registration
-        val intent = Intent(this, HomeActivity::class.java)
-        startActivity(intent)
-        finish()
+        showLoading()
+        disableInputs()
+
+        lifecycleScope.launch {
+            try {
+                val result = authRepository.register(email, password, fullName, phone)
+                processRegistrationResult(result)
+            } catch (e: Exception) {
+                hideLoading()
+                enableInputs()
+                Toast.makeText(
+                    this@RegisterActivity,
+                    "注册异常: ${e.message ?: getString(R.string.registration_failed)}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun processRegistrationResult(result: Result<AuthResponse>) {
+        hideLoading()
+        enableInputs()
+
+        try {
+            result.onSuccess {
+                Toast.makeText(this, getString(R.string.register_success), Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, HomeActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }.onFailure { e ->
+                val raw = e.message
+                val errorMessage = when {
+                    raw == null || raw.isEmpty() -> getString(R.string.registration_failed)
+                    raw.contains("Unable to resolve host", ignoreCase = true) ->
+                        "无法连接到服务器，请检查网络连接"
+                    raw.contains("timeout", ignoreCase = true) ->
+                        "连接超时，请稍后重试"
+                    raw.contains("connection", ignoreCase = true) ->
+                        "连接失败，请检查服务器是否运行"
+                    raw.contains("409", ignoreCase = true) ->
+                        "该邮箱已被注册"
+                    raw.contains("400", ignoreCase = true) ->
+                        "注册信息不完整或格式错误"
+                    raw.contains("邮箱") && raw.contains("已注册") -> raw
+                    raw.contains("Invalid email") -> "邮箱格式不正确"
+                    else -> raw
+                }
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.registration_failed), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun showLoading() {
+        loadingOverlay.visibility = android.view.View.VISIBLE
+        loadingIndicator.visibility = android.view.View.VISIBLE
+    }
+
+    private fun hideLoading() {
+        loadingOverlay.visibility = android.view.View.GONE
+        loadingIndicator.visibility = android.view.View.GONE
+    }
+
+    private fun disableInputs() {
+        fullNameEditText.isEnabled = false
+        emailEditText.isEnabled = false
+        phoneEditText.isEnabled = false
+        passwordEditText.isEnabled = false
+        confirmPasswordEditText.isEnabled = false
+        registerButton.isEnabled = false
+    }
+
+    private fun enableInputs() {
+        fullNameEditText.isEnabled = true
+        emailEditText.isEnabled = true
+        phoneEditText.isEnabled = true
+        passwordEditText.isEnabled = true
+        confirmPasswordEditText.isEnabled = true
+        registerButton.isEnabled = true
     }
 
     private fun setupBackButton() {

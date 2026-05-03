@@ -8,10 +8,11 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.example.grocerystore.api.Order as ApiOrder
 
 class OrderAdapter(
-    private val orders: List<Order>,
-    private val onItemClick: (Order) -> Unit
+    private val orders: List<ApiOrder>,
+    private val onItemClick: (ApiOrder) -> Unit
 ) : RecyclerView.Adapter<OrderAdapter.OrderViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
@@ -33,7 +34,7 @@ class OrderAdapter(
         private val orderDate: TextView = itemView.findViewById(R.id.orderDate)
         private val orderTotal: TextView = itemView.findViewById(R.id.orderTotal)
 
-        fun bind(order: Order) {
+        fun bind(order: ApiOrder) {
             val context = itemView.context
             val currentLanguage = LocaleHelper.getLocale(context)
             
@@ -41,31 +42,18 @@ class OrderAdapter(
             orderNumber.text = order.orderNumber
             
             // Display order status with appropriate background
-            orderStatus.text = when (order.status) {
-                OrderStatus.PENDING -> context.getString(R.string.pending)
-                OrderStatus.PROCESSING -> context.getString(R.string.processing)
-                OrderStatus.SHIPPED -> context.getString(R.string.shipped)
-                OrderStatus.DELIVERED -> context.getString(R.string.delivered)
-                OrderStatus.CANCELLED -> context.getString(R.string.cancelled)
-            }
+            orderStatus.text = getStatusText(order.status, context)
             
             // Set status background color
-            orderStatus.background = when (order.status) {
-                OrderStatus.DELIVERED -> ContextCompat.getDrawable(context, R.drawable.status_delivered)
-                OrderStatus.SHIPPED -> ContextCompat.getDrawable(context, R.drawable.status_shipped)
-                OrderStatus.PROCESSING -> ContextCompat.getDrawable(context, R.drawable.status_processing)
-                OrderStatus.PENDING -> ContextCompat.getDrawable(context, R.drawable.status_pending)
-                OrderStatus.CANCELLED -> ContextCompat.getDrawable(context, R.drawable.status_pending)
-            }
+            orderStatus.background = getStatusBackground(order.status, context)
             
             // Create items preview
             val itemsPreview = order.items.take(3).joinToString(", ") { item ->
                 val productName = when (currentLanguage) {
-                    "zh" -> item.product.name
-                    "en" -> item.product.nameEn
-                    "ru" -> item.product.nameRu
-                    else -> item.product.name
-                }
+                    "zh" -> item.productName
+                    "en" -> item.productNameEn
+                    else -> item.productName
+                } ?: "Product"
                 "$productName x${item.quantity}"
             }
             if (order.items.size > 3) {
@@ -74,14 +62,42 @@ class OrderAdapter(
                 orderItemsPreview.text = itemsPreview
             }
             
-            // Format date as dd.MM.yyyy
-            val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-            orderDate.text = dateFormat.format(order.orderDate)
+            // Format date - API returns ISO string
+            try {
+                val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                val outputFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                val date = inputFormat.parse(order.orderDate)
+                orderDate.text = date?.let { outputFormat.format(it) } ?: order.orderDate
+            } catch (e: Exception) {
+                orderDate.text = order.orderDate
+            }
             
             orderTotal.text = "¥${String.format("%.2f", order.finalTotal)}"
             
             itemView.setOnClickListener {
                 onItemClick(order)
+            }
+        }
+        
+        private fun getStatusText(status: String, context: android.content.Context): String {
+            return when (status.lowercase()) {
+                "pending" -> context.getString(R.string.pending)
+                "processing" -> context.getString(R.string.processing)
+                "shipped" -> context.getString(R.string.shipped)
+                "delivered" -> context.getString(R.string.delivered)
+                "cancelled" -> context.getString(R.string.cancelled)
+                else -> status
+            }
+        }
+        
+        private fun getStatusBackground(status: String, context: android.content.Context): android.graphics.drawable.Drawable? {
+            return when (status.lowercase()) {
+                "delivered" -> ContextCompat.getDrawable(context, R.drawable.status_delivered)
+                "shipped" -> ContextCompat.getDrawable(context, R.drawable.status_shipped)
+                "processing" -> ContextCompat.getDrawable(context, R.drawable.status_processing)
+                "pending" -> ContextCompat.getDrawable(context, R.drawable.status_pending)
+                "cancelled" -> ContextCompat.getDrawable(context, R.drawable.status_pending)
+                else -> ContextCompat.getDrawable(context, R.drawable.status_pending)
             }
         }
     }

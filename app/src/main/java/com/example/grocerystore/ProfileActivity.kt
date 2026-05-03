@@ -9,13 +9,16 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
+import com.example.grocerystore.repository.AuthRepository
+import com.example.grocerystore.repository.OrderRepository
+import com.example.grocerystore.api.Order as ApiOrder
+import com.example.grocerystore.api.User
+import kotlinx.coroutines.launch
 
 class ProfileActivity : AppCompatActivity() {
     
@@ -33,6 +36,10 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var navProfile: View
     
     private lateinit var orderAdapter: OrderAdapter
+    private lateinit var authRepository: AuthRepository
+    private lateinit var orderRepository: OrderRepository
+    
+    private var orders: List<ApiOrder> = emptyList()
 
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LocaleHelper.onAttach(it) })
@@ -40,15 +47,10 @@ class ProfileActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_profile)
-        
-        val rootLayout = findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.root_layout)
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+
+        authRepository = AuthRepository(this)
+        orderRepository = OrderRepository(this)
 
         initViews()
         setupRecyclerView()
@@ -73,7 +75,7 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        orderAdapter = OrderAdapter(OrderManager.getOrders()) { order ->
+        orderAdapter = OrderAdapter(orders) { order ->
             val intent = Intent(this, OrderActivity::class.java)
             intent.putExtra("order_id", order.id)
             intent.putExtra("is_new_order", false)
@@ -126,10 +128,10 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun loadUserInfo() {
-        val user = UserManager.getCurrentUser(this)
+        val user = authRepository.getCurrentUser()
         if (user != null) {
             emailText.text = user.email
-            fullNameText.text = user.fullName
+            fullNameText.text = user.fullName ?: ""
         } else {
             // Not logged in, redirect to login
             val intent = Intent(this, MainActivity::class.java)
@@ -140,16 +142,24 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun loadOrders() {
-        // Show all orders (all statuses)
-        val allOrders = OrderManager.getOrders()
-        
-        if (allOrders.isEmpty()) {
+        lifecycleScope.launch {
+            orderRepository.getOrders(0, 3).onSuccess { loadedOrders ->
+                orders = loadedOrders
+                updateOrdersUI()
+            }.onFailure {
+                // Silently fail for profile - just show empty orders
+            }
+        }
+    }
+    
+    private fun updateOrdersUI() {
+        if (orders.isEmpty()) {
             ordersRecyclerView.visibility = View.GONE
             emptyOrdersLayout.visibility = View.VISIBLE
         } else {
             ordersRecyclerView.visibility = View.VISIBLE
             emptyOrdersLayout.visibility = View.GONE
-            orderAdapter = OrderAdapter(allOrders) { order ->
+            orderAdapter = OrderAdapter(orders) { order ->
                 val intent = Intent(this, OrderActivity::class.java)
                 intent.putExtra("order_id", order.id)
                 intent.putExtra("is_new_order", false)
@@ -160,7 +170,7 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun showEditProfileDialog() {
-        val user = UserManager.getCurrentUser(this) ?: return
+        val user = authRepository.getCurrentUser() ?: return
         
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_profile, null)
         val fullNameEditText: TextInputEditText = dialogView.findViewById(R.id.fullNameEditText)
@@ -192,10 +202,16 @@ class ProfileActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             
-            UserManager.updateUser(this, fullName, phone, shippingAddress)
-            loadUserInfo()
+            // Update profile via API
+            lifecycleScope.launch {
+                authRepository.updateProfile(fullName, phone, shippingAddress).onSuccess {
+                    loadUserInfo()
+                    Toast.makeText(this@ProfileActivity, getString(R.string.save), Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    Toast.makeText(this@ProfileActivity, "Failed to update profile", Toast.LENGTH_SHORT).show()
+                }
+            }
             dialog.dismiss()
-            Toast.makeText(this, getString(R.string.save), Toast.LENGTH_SHORT).show()
         }
         
         cancelButton.setOnClickListener {
@@ -210,8 +226,7 @@ class ProfileActivity : AppCompatActivity() {
             .setTitle(getString(R.string.logout))
             .setMessage(getString(R.string.logout_confirm))
             .setPositiveButton(getString(R.string.logout)) { _, _ ->
-                UserManager.logout(this)
-                CartManager.clearCart()
+                authRepository.logout()
                 val intent = Intent(this, MainActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                 startActivity(intent)

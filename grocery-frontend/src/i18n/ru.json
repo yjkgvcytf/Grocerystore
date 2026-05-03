@@ -1,0 +1,92 @@
+{
+  "app": {
+    "name": "Продуктовый магазин",
+    "tagline": "Качественные продукты, удобная жизнь"
+  },
+  "nav": {
+    "home": "Главная",
+    "categories": "Категории",
+    "cart": "Корзина",
+    "orders": "Заказы",
+    "profile": "Профиль"
+  },
+  "auth": {
+    "login": "Войти",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "email": "Эл. почта",
+    "password": "Пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "fullName": "Полное имя",
+    "phone": "Телефон",
+    "rememberMe": "Запомнить меня",
+    "noAccount": "Нет аккаунта?",
+    "hasAccount": "Уже есть аккаунт?",
+    "loginTitle": "С возвращением",
+    "registerTitle": "Создать аккаунт"
+  },
+  "product": {
+    "addToCart": "В корзину",
+    "buyNow": "Купить сейчас",
+    "soldCount": "Продано",
+    "stock": "В наличии",
+    "featured": "Популярные",
+    "allProducts": "Все товары",
+    "search": "Поиск товаров...",
+    "noProducts": "Нет товаров",
+    "details": "Детали товара"
+  },
+  "cart": {
+    "title": "Корзина",
+    "empty": "Корзина пуста",
+    "continueShopping": "Продолжить покупки",
+    "checkout": "Оформить заказ",
+    "originalPrice": "Цена",
+    "discount": "Скидка",
+    "reduction": "Уменьшение",
+    "finalTotal": "Итого",
+    "delivery": "Доставка",
+    "free": "Бесплатно"
+  },
+  "order": {
+    "title": "Мои заказы",
+    "empty": "Нет заказов",
+    "orderNumber": "Номер заказа",
+    "orderDate": "Дата заказа",
+    "status": "Статус",
+    "total": "Итого",
+    "viewDetails": "Подробнее",
+    "createOrder": "Оформить заказ",
+    "recipientName": "Имя получателя",
+    "recipientPhone": "Телефон получателя",
+    "shippingAddress": "Адрес доставки",
+    "statuses": {
+      "PENDING": "Ожидает",
+      "PROCESSING": "Обрабатывается",
+      "SHIPPED": "Отправлен",
+      "DELIVERED": "Доставлен",
+      "CANCELLED": "Отменен"
+    }
+  },
+  "profile": {
+    "title": "Мой профиль",
+    "editProfile": "Редактировать",
+    "recentOrders": "Недавние заказы",
+    "viewAllOrders": "Все заказы"
+  },
+  "category": {
+    "title": "Категории",
+    "all": "Все"
+  },
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Что-то пошло не так",
+    "retry": "Повторить",
+    "success": "Успешно",
+    "confirm": "Подтвердить",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "price": "Цена"
+  }
+}

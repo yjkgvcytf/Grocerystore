@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net" modified="2026-05-04T00:04:00.000Z" agent="Cursor" version="24.7.17">
+  <diagram id="domain-class-diagram" name="Domain Class Diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Диаграмма классов предметной области Grocery Store" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="430" y="20" width="740" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="class_user" value="User|+ id: String&#xa;+ email: String&#xa;+ password: String&#xa;+ fullName: String&#xa;+ phone: String&#xa;+ shippingAddress: String&#xa;+ createdAt: LocalDateTime&#xa;+ updatedAt: LocalDateTime|" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="130" width="260" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="class_category" value="Category|+ id: String&#xa;+ name: String&#xa;+ nameEn: String&#xa;+ nameRu: String&#xa;+ icon: String|" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="660" y="100" width="250" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="class_product" value="Product|+ id: String&#xa;+ name: String&#xa;+ nameEn: String&#xa;+ nameRu: String&#xa;+ description: String&#xa;+ descriptionEn: String&#xa;+ descriptionRu: String&#xa;+ price: BigDecimal&#xa;+ imageUrl: String&#xa;+ soldCount: Integer&#xa;+ stock: Integer&#xa;+ featured: Boolean&#xa;+ createdAt: LocalDateTime|" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="330" width="310" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="class_cart" value="CartItem|+ id: String&#xa;+ quantity: Integer|+ getSubtotal(): BigDecimal" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="360" y="410" width="220" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="class_order" value="Order|+ id: String&#xa;+ orderNumber: String&#xa;+ originalPrice: BigDecimal&#xa;+ discount: BigDecimal&#xa;+ reduction: BigDecimal&#xa;+ finalTotal: BigDecimal&#xa;+ shippingAddress: String&#xa;+ recipientName: String&#xa;+ recipientPhone: String&#xa;+ status: OrderStatus&#xa;+ orderDate: LocalDateTime|+ addItem(item: OrderItem): void" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="130" width="320" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="class_order_item" value="OrderItem|+ id: String&#xa;+ unitPrice: BigDecimal&#xa;+ quantity: Integer&#xa;+ subtotal: BigDecimal|" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="520" width="260" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="enum_status" value="&amp;lt;&amp;lt;enum&amp;gt;&amp;gt;&#xa;OrderStatus|PENDING&#xa;PROCESSING&#xa;SHIPPED&#xa;DELIVERED&#xa;CANCELLED|" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=45;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="205" width="180" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_user_cart" value="1        0..*" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=12;" edge="1" parent="1" source="class_user" target="class_cart">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="240" as="sourcePoint" />
+            <mxPoint x="470" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_user_order" value="1        0..*" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=12;" edge="1" parent="1" source="class_user" target="class_order">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="220" y="80" />
+              <mxPoint x="1200" y="80" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_category_product" value="1        0..*" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=12;" edge="1" parent="1" source="class_category" target="class_product">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_product_cart" value="1        0..*" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=12;" edge="1" parent="1" source="class_product" target="class_cart">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_order_item" value="1        1..*" style="startArrow=diamondThin;startFill=1;endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=12;" edge="1" parent="1" source="class_order" target="class_order_item">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_product_order_item" value="1        0..*" style="endArrow=none;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#333333;fontSize=12;" edge="1" parent="1" source="class_product" target="class_order_item">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="610" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_order_status" value="uses" style="endArrow=open;html=1;rounded=0;dashed=1;edgeStyle=orthogonalEdgeStyle;strokeColor=#666666;fontSize=12;" edge="1" parent="1" source="class_order" target="enum_status">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Диаграмма построена по сущностям пакета entity: User, Category, Product, CartItem, Order, OrderItem, OrderStatus." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="760" width="610" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
